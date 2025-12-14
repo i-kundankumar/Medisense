@@ -1,0 +1,112 @@
+/* ABOUT SECTION */
+
+.about-hero {
+  margin-top: 32px;
+  margin-bottom: 32px;
+}
+
+.about-hero-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #071133;
+  margin-bottom: 8px;
+}
+
+.about-hero-subtitle {
+  max-width: 640px;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr;
+  gap: 24px;
+  margin-top: 28px;
+}
+
+/* Left content card */
+.about-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  padding: 20px 22px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+}
+
+.about-card h3 {
+  font-size: 18px;
+  margin-bottom: 10px;
+  color: #071133;
+}
+
+.about-card p {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+/* Right metrics / stats */
+.about-metrics {
+  display: grid;
+  gap: 12px;
+}
+
+.about-metric {
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  padding: 14px 16px;
+}
+
+.about-metric-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.about-metric-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: #071133;
+}
+
+/* Team / values list */
+.about-list {
+  margin-top: 24px;
+  display: grid;
+  gap: 14px;
+}
+
+.about-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.about-bullet {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .about-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-hero-title {
+    font-size: 24px;
+  }
+}

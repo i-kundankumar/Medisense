@@ -1,0 +1,142 @@
+/* Features Section */
+.features-header {
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.features-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+}
+
+.features-subtitle {
+  font-size: 1rem;
+  line-height: 1.5;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.muted {
+  color: #64748b;
+}
+
+/* Feature Cards */
+.feature-detail {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 2rem;
+  height: 100%;
+  display: flex;
+  gap: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-detail::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.feature-detail:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(6, 182, 212, 0.15), 0 4px 8px rgba(0, 0, 0, 0.05);
+  border-color: #06b6d4;
+}
+
+.feature-detail:hover::before {
+  transform: scaleX(1);
+}
+
+/* Feature Icon */
+.feature-icon {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+  transition: all 0.3s ease;
+}
+
+.feature-detail:hover .feature-icon {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(6, 182, 212, 0.4);
+}
+
+/* Feature Content */
+.feature-content {
+  flex: 1;
+}
+
+.feature-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.75rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+}
+
+.feature-description {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin: 0;
+  color: #64748b;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .features-title {
+    font-size: 2rem;
+  }
+  
+  .features-subtitle {
+    font-size: 1rem;
+  }
+  
+  .feature-detail {
+    flex-direction: column;
+    padding: 1.5rem;
+  }
+  
+  .feature-icon {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .feature-title {
+    font-size: 1.125rem;
+  }
+  
+  .feature-description {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .features-title {
+    font-size: 1.75rem;
+  }
+  
+  .feature-detail {
+    padding: 1.25rem;
+  }
+}

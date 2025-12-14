@@ -1,0 +1,98 @@
+/* Pricing section */
+.pricing-card {
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  text-align: left;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.03);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.pricing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+.pricing-card.featured {
+  background: linear-gradient(180deg, #ffffff, #f5f8ff);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  box-shadow: 0 14px 40px rgba(59, 130, 246, 0.18);
+}
+
+.pricing-card h4 {
+  margin-bottom: 4px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #071133;
+}
+
+.pricing-card .muted {
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+/* Price text */
+.pricing-card .price {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+/* Features list */
+.pricing-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.pricing-card ul li {
+  position: relative;
+  padding-left: 18px;
+  margin-bottom: 6px;
+}
+
+.pricing-card ul li::before {
+  content: "•";
+  position: absolute;
+  left: 4px;
+  top: 0;
+  color: var(--accent);
+  font-size: 16px;
+}
+
+/* Button inside card */
+.pricing-card .btn {
+  font-weight: 600;
+  border-radius: 999px;
+}
+
+/* Small tweak for spacing on mobile */
+@media (max-width: 768px) {
+  .pricing-card {
+    text-align: center;
+  }
+
+  .pricing-card ul {
+    text-align: left;
+    max-width: 260px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+
+.pricing-card {
+  background: white;
+  border-radius: 10px;
+  border: 1px solid rgba(12, 18, 30, 0.04);
+  text-align: center;
+}
+
+.pricing-card.featured {
+  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.14);
+}
