@@ -7,13 +7,13 @@ import { getAuth } from "firebase/auth";       // <--- ADDED
 import { getFirestore } from "firebase/firestore"; // <--- ADDED
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDmG84oTWDJ4gtMZdrqYULHgsRGS0mNcC8",
-    authDomain: "smarthealthmonitor-a00af.firebaseapp.com",
-    projectId: "smarthealthmonitor-a00af",
-    storageBucket: "smarthealthmonitor-a00af.firebasestorage.app",
-    messagingSenderId: "541812868488",
-    appId: "1:541812868488:web:de431285221c5cb396663d",
-    measurementId: "G-8EWDGBSCMS"
+    apiKey: import.meta.env.VITE_API_KEY,
+    authDomain: `${import.meta.env.VITE_PROJECT_ID}.firebaseapp.com`,
+    projectId: import.meta.env.VITE_PROJECT_ID,
+    storageBucket: `${import.meta.env.VITE_PROJECT_ID}.firebasestorage.app`,
+    messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_APP_ID,
+    measurementId: import.meta.env.VITE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
