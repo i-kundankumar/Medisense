@@ -61,3 +61,81 @@ cd health-monitor-iot
 # Install dependencies
 npm install
 ```
+
+### 3. Firebase Configuration
+Go to Firebase Console.
+
+Create a new project.
+
+Enable Authentication (Email/Password).
+
+Enable Firestore Database (Start in Test Mode).
+
+Copy your web app configuration keys.
+
+Create a file named src/firebase.js and paste your keys:
+
+JavaScript
+```
+// src/firebase.js
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export default app;
+```
+### 4. Run the App
+```
+npm run dev
+Open http://localhost:5173 in your browser.
+```
+### 📂 Project Structure
+```
+src/
+├── assets/          # Images and Logos
+├── components/      # Reusable components
+│   ├── AppointmentsView.jsx
+│   ├── MessagesView.jsx
+│   └── PatientsView.jsx
+├── pages/           # Main Page Views
+│   ├── Dashboard.jsx       # Unified Dashboard (Doctor/Patient Logic)
+│   ├── Login.jsx
+│   └── Signup.jsx
+├── App.jsx          # Routing Logic
+├── firebase.js      # Firebase Config
+└── main.jsx         # Entry Point
+```
+### 🔮 Future Scope (IoT Integration)
+The current version uses a Simulation Engine to generate health data. The next phase involves integrating hardware:
+
+Hardware: ESP32 Microcontroller.
+
+Sensors: MAX30102 (HR/SpO₂), DS18B20 (Temperature).
+
+Flow: ESP32 → Firebase Realtime Database → React Dashboard.
+
+### 🤝 Contributing
+Fork the repository.
+
+Create a new Branch (git checkout -b feature/AmazingFeature).
+
+Commit your changes (git commit -m 'Add some AmazingFeature').
+
+Push to the Branch (git push origin feature/AmazingFeature).
+
+Open a Pull Request.
+
+### 📝 License
+This project is licensed under the MIT License.
