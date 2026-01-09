@@ -1,4 +1,3 @@
-import "./index.css";
 import banner from "./assets/banner.jpg";
 import { Activity, Zap, Cloud, Heart, TrendingUp, Shield, Smartphone, CheckCircle } from "lucide-react";
 
@@ -39,7 +38,7 @@ function Home() {
   const stats = [
     { label: "Continuous", value: "24/7", icon: <Activity className="w-5 h-5" /> },
     { label: "Connected", value: "ESP32", icon: <Zap className="w-5 h-5" /> },
-    { label: "Cloud Ready", value: "Multi", icon: <Cloud className="w-5 h-5" /> }
+    { label: "Firebase", value: "Cloud", icon: <Cloud className="w-5 h-5" /> }
   ];
 
   return (
