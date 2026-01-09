@@ -33,11 +33,7 @@ function About() {
             </section>
 
             {/* Mission Section */}
-<<<<<<< HEAD
             <section className="py-8 px-8 sm:px-12 lg:px-24 bg-white" style={{ paddingTop: '0px' }}>
-=======
-            <section className="py-8 px-8 sm:px-12 lg:px-24 bg-white" style="padding-top:0px">
->>>>>>> a65a9d0c3c3b47b7ceabc9e57e619b62ed697b3e
                 <div className="max-w-6xl mx-auto">
                     <div className="max-w-3xl">
                         {/* Left Content */}
