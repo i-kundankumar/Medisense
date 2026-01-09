@@ -15,7 +15,7 @@ function features() {
         {
             icon: <Cloud className="w-6 h-6" />,
             title: "Cloud Connectivity & Storage",
-            description: "Uploads real-time vitals to Firebase, MQTT, or ThingSpeak for remote access, analysis, history logs, and long-term patient tracking."
+            description: "Uploads real-time vitals to Firebase, MQTT, for remote access, analysis, history logs, and long-term patient tracking."
         },
         {
             icon: <LayoutGrid className="w-6 h-6" />,
