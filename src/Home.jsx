@@ -6,7 +6,7 @@ function Home() {
     {
       icon: <Heart className="w-6 h-6" />,
       title: "Multi-Sensor Monitoring",
-      description: "MAX30102, DS18B20, MPU6050, MQ135 for comprehensive health tracking"
+      description: "MAX30102, DS18B20, AD8232, for comprehensive health tracking"
     },
     {
       icon: <Cloud className="w-6 h-6" />,
