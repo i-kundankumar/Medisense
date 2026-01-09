@@ -137,5 +137,7 @@ Push to the Branch (git push origin feature/AmazingFeature).
 
 Open a Pull Request.
 
-### 📝 License
-This project is licensed under the MIT License.
+## License
+This project is licensed under a Non-Commercial License (CC BY-NC 4.0).
+
+Commercial use, resale, or use in paid services is strictly prohibited.
