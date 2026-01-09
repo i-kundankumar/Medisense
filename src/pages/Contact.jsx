@@ -216,6 +216,14 @@ function Contact() {
                         <button onClick="/" className="px-8 py-3 border-2 border-white text-white font-medium rounded-lg hover:bg-white hover:bg-opacity-10 transition-all duration-200">
                              <a href="https://github.com/i-kundankumar/Medisense" target="_blank" rel="noopener noreferrer">View GitHub</a>
                         </button>
+                        <a 
+                            href="https://github.com/i-kundankumar/Medisense" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="px-8 py-3 border-2 border-white text-white font-medium rounded-lg hover:bg-white hover:bg-opacity-10 transition-all duration-200 inline-block"
+                        >
+                            View GitHub
+                        </a>
                     </div>
                 </div>
             </section>
