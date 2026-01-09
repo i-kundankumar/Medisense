@@ -5,7 +5,7 @@ function features() {
         {
             icon: <Heart className="w-6 h-6" />,
             title: "Multi-Sensor Health Monitoring",
-            description: "Tracks heart rate, SpO₂ (MAX30102), body temperature (DS18B20/LM35), fall detection (MPU6050), and air quality (MQ135) with high accuracy."
+            description: "Tracks heart rate(AD8232), SpO₂ (MAX30102), body temperature (DS18B20/LM35) and fall detection (MPU6050), with high accuracy."
         },
         {
             icon: <Zap className="w-6 h-6" />,
