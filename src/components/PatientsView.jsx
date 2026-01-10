@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Search, FileText, User } from 'lucide-react';
+import { Search, FileText, User, Activity, Wifi, Moon } from 'lucide-react';
 import { db } from "../firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
+import PatientMonitorModal from './PatientMonitorModal';
 
 const PatientsView = ({ currentUser }) => {
   const [patients, setPatients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPatientId, setSelectedPatientId] = useState(null);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -14,11 +16,11 @@ const PatientsView = ({ currentUser }) => {
 
     // --- PROCESS TO SELECT PATIENTS FOR DIFFERENT DOCTORS ---
     // Option 1 (Prototype): Fetch ALL patients.
-    let q = query(usersRef, where("role", "==", "patient"));
+    // let q = query(usersRef, where("role", "==", "patient"));
 
     // Option 2 (Strict): Fetch ONLY patients assigned to this doctor.
     // Requirement: You must add a field 'assignedDoctorId' to the patient document in Firestore.
-    // q = query(usersRef, where("role", "==", "patient"), where("assignedDoctorId", "==", currentUser.uid));
+    const q = query(usersRef, where("role", "==", "patient"), where("assignedDoctorId", "==", currentUser.uid));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const patientsList = snapshot.docs.map(doc => ({
@@ -35,6 +37,24 @@ const PatientsView = ({ currentUser }) => {
   const filteredPatients = patients.filter(p =>
     p.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Get the active patient object for the modal
+  const activePatient = patients.find(p => p.id === selectedPatientId);
+
+  // Helper to determine status
+  const getPatientStatus = (p) => {
+    // 1. Check for LIVE (Vitals updated in last 20 seconds)
+    if (p.currentVitals?.lastUpdated) {
+      const lastUpdate = p.currentVitals.lastUpdated.toDate ? p.currentVitals.lastUpdated.toDate().getTime() : Date.now();
+      const diff = Date.now() - lastUpdate;
+      if (diff < 20000) return 'Live';
+    }
+    // 2. Check for ONLINE
+    if (p.isOnline) return 'Signed In';
+
+    // 3. Default
+    return 'Offline';
+  };
 
   return (
     <div className="view-container">
@@ -85,19 +105,37 @@ const PatientsView = ({ currentUser }) => {
                   {/* These fields are placeholders since they aren't in Signup yet */}
                   <td>{p.condition || "General Checkup"}</td>
                   <td>
-                    <span className={`status-badge ${p.status ? p.status.toLowerCase() : 'outpatient'}`}>
-                      {p.status || "Active"}
-                    </span>
+                    {(() => {
+                      const status = getPatientStatus(p);
+                      if (status === 'Live') {
+                        return <span className="flex w-fit items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100"><Activity size={12} className="animate-pulse" /> Live</span>;
+                      } else if (status === 'Signed In') {
+                        return <span className="flex w-fit items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-100"><Wifi size={12} /> Signed In</span>;
+                      } else {
+                        return <span className="flex w-fit items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200"><Moon size={12} /> Offline</span>;
+                      }
+                    })()}
                   </td>
                   <td>{p.createdAt ? new Date(p.createdAt.seconds * 1000).toLocaleDateString() : "N/A"}</td>
                   <td>
-                    <button className="icon-btn"><FileText size={18} /></button>
+                    <button
+                      className="icon-btn hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                      onClick={() => setSelectedPatientId(p.id)}
+                      title="View Live Vitals"
+                    >
+                      <Activity size={18} />
+                    </button>
                   </td>
                 </tr>
               )))}
           </tbody>
         </table>
       </div>
+
+      {/* LIVE PATIENT MONITOR MODAL */}
+      {activePatient && (
+        <PatientMonitorModal patient={activePatient} onClose={() => setSelectedPatientId(null)} />
+      )}
     </div>
   );
 };

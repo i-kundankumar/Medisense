@@ -10,7 +10,7 @@ import {
 // Firebase Imports
 import { auth, db } from "../firebase";
 import { signOut } from "firebase/auth";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
 
 import './Dashboard.css'; // Make sure this CSS file exists
 import logo from "../assets/logo.png";
@@ -22,6 +22,7 @@ import MessagesView from '../components/MessagesView';
 import ShareDataView from '../components/ShareDataView';
 import MyVitalsView from '../components/MyVitalsView';
 import HistoryView from '../components/HistoryView';
+import DoctorDashboardView from '../components/DoctorDashboardView';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -66,7 +67,25 @@ const Dashboard = () => {
     return () => clearInterval(timer);
   }, [user]);
 
+  // 3. MANAGE ONLINE STATUS (For Patients)
+  useEffect(() => {
+    if (user?.role === 'patient') {
+      const userRef = doc(db, "users", user.uid);
+      // Set Online on mount
+      updateDoc(userRef, { isOnline: true }).catch(err => console.error("Error setting online:", err));
+
+      // Set Offline on unmount
+      return () => {
+        updateDoc(userRef, { isOnline: false }).catch(err => console.error("Error setting offline:", err));
+      };
+    }
+  }, [user?.uid, user?.role]);
+
   const handleLogout = async () => {
+    if (user?.role === 'patient') {
+      // Attempt to set offline before signing out
+      try { await updateDoc(doc(db, "users", user.uid), { isOnline: false }); } catch (e) { /* ignore */ }
+    }
     await signOut(auth);
     navigate('/login');
   };
@@ -75,22 +94,7 @@ const Dashboard = () => {
   const renderDoctorContent = () => {
     switch (activeNav) {
       case 'dashboard':
-        return (
-          <div className="stats-grid">
-            <div className="stat-card blue">
-              <div className="stat-icon-bg"><Calendar size={24} color="#2563eb" /></div>
-              <div><h3>12</h3><p>Appointments Today</p></div>
-            </div>
-            <div className="stat-card orange">
-              <div className="stat-icon-bg orange-bg"><AlertCircle size={24} color="#ea580c" /></div>
-              <div><h3>3</h3><p>Pending Requests</p></div>
-            </div>
-            <div className="stat-card green">
-              <div className="stat-icon-bg green-bg"><CheckCircle2 size={24} color="#16a34a" /></div>
-              <div><h3>28</h3><p>Total Patients</p></div>
-            </div>
-          </div>
-        );
+        return <DoctorDashboardView currentUser={user} />;
       case 'patients': return <PatientsView currentUser={user} />;
       case 'appointments': return <AppointmentsView />;
       case 'message': return <MessagesView currentUser={user} />;
