@@ -36,8 +36,8 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
     // Helper to check sharing status
     const isSharingLive = currentUser?.assignedDoctorId && currentUser?.sharingPermissions?.live;
 
-    // Ref to track last history save time to prevent excessive writes
-    const lastHistorySave = useRef(0);
+    // Ref to track last live update time
+    const lastLiveUpdate = useRef(0);
 
     // Initialize with dummy data so the chart isn't empty on load
     const [history, setHistory] = useState(() => {
@@ -119,8 +119,8 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
         const handleUpload = async () => {
             const now = Date.now();
 
-            // A. Update Live Node (Real-time, every second) - ONLY IF SHARING
-            if (isSharingLive) {
+            // A. Update Live Node (Real-time, every 5 seconds) - ONLY IF SHARING
+            if (isSharingLive && now - lastLiveUpdate.current >= 2000) {
                 try {
                     const userRef = doc(db, "users", currentUser.uid);
                     await updateDoc(userRef, {
@@ -129,22 +129,9 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
                             lastUpdated: serverTimestamp()
                         }
                     });
+                    lastLiveUpdate.current = now;
                 } catch (e) {
                     console.error("Error updating live vitals:", e);
-                }
-            }
-
-            // B. Save History (Throttled ~5s)
-            if (now - lastHistorySave.current >= 5000) {
-                try {
-                    await addDoc(collection(db, "users", currentUser.uid, "vitalsHistory"), {
-                        ...vitals,
-                        timestamp: serverTimestamp(),
-                        readableTime: new Date().toLocaleString()
-                    });
-                    lastHistorySave.current = now;
-                } catch (error) {
-                    console.error("Error saving vitals history:", error);
                 }
             }
         };
@@ -226,11 +213,10 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
                         )}
                         <button
                             onClick={toggleRecording}
-                            className={`flex items-center gap-2 text-sm font-bold px-2 py-0.5 rounded-full transition-colors ${
-                                isRecording 
-                                ? 'text-red-600 hover:text-red-700' 
+                            className={`flex items-center gap-2 text-sm font-bold px-2 py-0.5 rounded-full transition-colors ${isRecording
+                                ? 'text-red-600 hover:text-red-700'
                                 : 'text-slate-700 hover:text-slate-900'
-                            }`}
+                                }`}
                         >
                             {isRecording ? (
                                 <><Square size={14} fill="currentColor" /> Stop {isSharingLive ? 'Upload' : 'Rec'}</>
@@ -240,36 +226,36 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
                         </button>
                     </div>
 
-                {currentUser?.assignedDoctorId ? (
-                    <div className="flex items-center gap-3 bg-blue-50 px-4 py-2 rounded-full border border-blue-100 self-start sm:self-auto">
-                        <div className="relative">
-                            <div className="w-2 h-2 bg-green-500 rounded-full absolute top-0 right-0 animate-pulse"></div>
-                            <Share2 size={16} className="text-blue-600" />
+                    {currentUser?.assignedDoctorId ? (
+                        <div className="flex items-center gap-3 bg-blue-50 px-4 py-2 rounded-full border border-blue-100 self-start sm:self-auto">
+                            <div className="relative">
+                                <div className="w-2 h-2 bg-green-500 rounded-full absolute top-0 right-0 animate-pulse"></div>
+                                <Share2 size={16} className="text-blue-600" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wide">Doctor Connected</span>
+                                <span className="text-[10px] text-blue-600 leading-none opacity-80">
+                                    Sharing: {currentUser.sharingPermissions?.live ? 'Live' : ''}
+                                    {currentUser.sharingPermissions?.live && currentUser.sharingPermissions?.history ? ' & ' : ''}
+                                    {currentUser.sharingPermissions?.history ? 'History' : ''}
+                                </span>
+                            </div>
+                            <button
+                                onClick={() => setActiveNav('share')}
+                                className="ml-1 p-1 hover:bg-blue-100 rounded-full transition-colors text-blue-500"
+                            >
+                                <Settings size={14} />
+                            </button>
                         </div>
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wide">Doctor Connected</span>
-                            <span className="text-[10px] text-blue-600 leading-none opacity-80">
-                                Sharing: {currentUser.sharingPermissions?.live ? 'Live' : ''}
-                                {currentUser.sharingPermissions?.live && currentUser.sharingPermissions?.history ? ' & ' : ''}
-                                {currentUser.sharingPermissions?.history ? 'History' : ''}
-                            </span>
-                        </div>
+                    ) : (
                         <button
                             onClick={() => setActiveNav('share')}
-                            className="ml-1 p-1 hover:bg-blue-100 rounded-full transition-colors text-blue-500"
+                            className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors self-start sm:self-auto"
                         >
-                            <Settings size={14} />
+                            <Share2 size={16} />
+                            <span>Connect Doctor</span>
                         </button>
-                    </div>
-                ) : (
-                    <button
-                        onClick={() => setActiveNav('share')}
-                        className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors self-start sm:self-auto"
-                    >
-                        <Share2 size={16} />
-                        <span>Connect Doctor</span>
-                    </button>
-                )}
+                    )}
                 </div>
             </div>
 
