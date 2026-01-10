@@ -8,8 +8,8 @@ function Layout() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const navLinks = [
+        { label: "Home", href: "/" },
         { label: "Features", href: "/features" },
-        { label: "Pricing", href: "/pricing" },
         { label: "About", href: "/about" },
     ];
 
@@ -130,7 +130,6 @@ function Layout() {
                             {/* Links */}
                             <nav className="flex items-center gap-6">
                                 <a href="/features" className="text-gray-400 text-sm hover:text-blue-400 transition-colors">Features</a>
-                                <a href="/pricing" className="text-gray-400 text-sm hover:text-blue-400 transition-colors">Pricing</a>
                                 <a href="/about" className="text-gray-400 text-sm hover:text-blue-400 transition-colors">About</a>
                                 <a href="/privacy" className="text-gray-400 text-sm hover:text-blue-400 transition-colors">Privacy</a>
                                 <a href="/terms" className="text-gray-400 text-sm hover:text-blue-400 transition-colors">Terms</a>

@@ -1,4 +1,7 @@
 /* Modern Doctor Dashboard CSS - Fully Responsive */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 * {
     margin: 0;
@@ -22,6 +25,13 @@ body {
     background-color: #f4f7fe;
     font-family: 'Segoe UI', sans-serif;
 }
+
+ .chart-container {
+     width: 100%;
+     height: 400px;
+     /* Or a min-height */
+     /* Or use flexbox/grid to manage its dimensions */
+ }
 
 /* ========== SIDEBAR ========== */
 .sidebar {

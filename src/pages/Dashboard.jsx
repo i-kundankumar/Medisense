@@ -4,14 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import {
   Calendar, Users, LogOut, Activity, BarChart3,
   MessageSquare, Clock, CheckCircle2, AlertCircle,
-  Heart, Thermometer, Droplets // Icons for Patient Vitals
+  Share2 // Icons for Patient Vitals
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // Firebase Imports
 import { auth, db } from "../firebase";
 import { signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 
 import './Dashboard.css'; // Make sure this CSS file exists
 import logo from "../assets/logo.png";
@@ -20,6 +19,9 @@ import logo from "../assets/logo.png";
 import PatientsView from '../components/PatientsView';
 import AppointmentsView from '../components/AppointmentsView';
 import MessagesView from '../components/MessagesView';
+import ShareDataView from '../components/ShareDataView';
+import MyVitalsView from '../components/MyVitalsView';
+import HistoryView from '../components/HistoryView';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -28,51 +30,37 @@ const Dashboard = () => {
   const [activeNav, setActiveNav] = useState('dashboard');
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // --- STATE FOR PATIENT VITALS (Simulation) ---
-  const [vitals, setVitals] = useState({ heartRate: 72, spo2: 98, temp: 36.5 });
-  const [history, setHistory] = useState([]);
-
   // 1. FETCH REAL USER ROLE FROM FIREBASE
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
-      if (currentUser) {
-        try {
-          const docRef = doc(db, "users", currentUser.uid);
-          const docSnap = await getDoc(docRef);
+    let unsubscribeUserDoc = () => { };
 
+    const unsubscribeAuth = auth.onAuthStateChanged((currentUser) => {
+      // Always unsubscribe previous listener if auth state changes
+      unsubscribeUserDoc();
+
+      if (currentUser) {
+        const docRef = doc(db, "users", currentUser.uid);
+        // Use onSnapshot for real-time updates (e.g. when connecting to a doctor)
+        unsubscribeUserDoc = onSnapshot(docRef, (docSnap) => {
           if (docSnap.exists()) {
             setUser({ ...docSnap.data(), uid: currentUser.uid });
-          } else {
-            console.error("No user data found in Firestore!");
           }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        }
+          setLoading(false);
+        });
       } else {
-        // Not logged in? Redirect to login
+        setUser(null);
         navigate('/login');
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => { unsubscribeAuth(); unsubscribeUserDoc(); };
   }, [navigate]);
 
   // 2. CLOCK & PATIENT SIMULATION LOOP
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-
-      // Simulate Vitals only if user is a Patient
-      if (user?.role === 'patient') {
-        const newHR = Math.floor(Math.random() * (100 - 60) + 60);
-        const newSpO2 = Math.floor(Math.random() * (100 - 94) + 94);
-        const newTemp = (Math.random() * (37.5 - 36.0) + 36.0).toFixed(1);
-        const timeStr = new Date().toLocaleTimeString();
-
-        setVitals({ heartRate: newHR, spo2: newSpO2, temp: newTemp });
-        setHistory(prev => [...prev.slice(-15), { time: timeStr, hr: newHR, spo2: newSpO2 }]);
-      }
     }, 2000);
 
     return () => clearInterval(timer);
@@ -103,7 +91,7 @@ const Dashboard = () => {
             </div>
           </div>
         );
-      case 'patients': return <PatientsView />;
+      case 'patients': return <PatientsView currentUser={user} />;
       case 'appointments': return <AppointmentsView />;
       case 'message': return <MessagesView currentUser={user} />;
       default: return <div>Select an option</div>;
@@ -115,60 +103,13 @@ const Dashboard = () => {
     switch (activeNav) {
       case 'message':
         return <MessagesView currentUser={user} />;
+      case 'share':
+        return <ShareDataView currentUser={user} />;
       case 'history':
-        return <div className="p-8 text-center text-gray-500"><h2>History Feature Coming Soon</h2></div>;
+        return <HistoryView currentUser={user} />;
       case 'dashboard':
       default:
-        return (
-          <div className="patient-layout">
-            {/* Vitals Cards */}
-            <div className="stats-grid">
-              {/* Heart Rate */}
-              <div className={`stat-card ${vitals.heartRate > 100 ? 'orange' : 'green'}`}>
-                <div className="stat-icon-bg"><Heart size={24} color="#ef4444" /></div>
-                <div>
-                  <h3>{vitals.heartRate} <span style={{ fontSize: '14px', color: '#888' }}>bpm</span></h3>
-                  <p>Heart Rate</p>
-                </div>
-              </div>
-
-              {/* SpO2 */}
-              <div className={`stat-card ${vitals.spo2 < 95 ? 'orange' : 'blue'}`}>
-                <div className="stat-icon-bg"><Droplets size={24} color="#3b82f6" /></div>
-                <div>
-                  <h3>{vitals.spo2} <span style={{ fontSize: '14px', color: '#888' }}>%</span></h3>
-                  <p>Blood Oxygen</p>
-                </div>
-              </div>
-
-              {/* Temp */}
-              <div className={`stat-card ${vitals.temp > 37.5 ? 'orange' : 'green'}`}>
-                <div className="stat-icon-bg"><Thermometer size={24} color="#f59e0b" /></div>
-                <div>
-                  <h3>{vitals.temp} <span style={{ fontSize: '14px', color: '#888' }}>°C</span></h3>
-                  <p>Temperature</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Live Graph */}
-            <div style={{ marginTop: '20px', background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-              <h3>Live Health Trends</h3>
-              <div style={{ width: '100%', height: 300 }}>
-                <ResponsiveContainer>
-                  <LineChart data={history}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time" />
-                    <YAxis domain={[40, 160]} />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="hr" stroke="#ef4444" strokeWidth={2} name="Heart Rate" dot={false} />
-                    <Line type="monotone" dataKey="spo2" stroke="#3b82f6" strokeWidth={2} name="SpO2" dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        );
+        return <MyVitalsView currentUser={user} setActiveNav={setActiveNav} />;
     }
   };
 
@@ -192,6 +133,7 @@ const Dashboard = () => {
     { id: 'dashboard', label: 'My Vitals', icon: Activity },
     { id: 'history', label: 'History', icon: Calendar }, // Placeholder
     { id: 'message', label: 'Consult Doctor', icon: MessageSquare },
+    { id: 'share', label: 'Share Data', icon: Share2 },
   ];
 
   const navItems = user?.role === 'doctor' ? doctorNav : patientNav;
