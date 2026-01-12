@@ -119,11 +119,11 @@ const PatientsView = ({ currentUser }) => {
                   <td>{p.createdAt ? new Date(p.createdAt.seconds * 1000).toLocaleDateString() : "N/A"}</td>
                   <td>
                     <button
-                      className="icon-btn hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                      className="flex items-center gap-2 px-3 py-1.5 bg-white border border-blue-200 text-blue-600 rounded-lg text-xs font-medium hover:bg-blue-50 transition-colors"
                       onClick={() => setSelectedPatientId(p.id)}
-                      title="View Live Vitals"
                     >
-                      <Activity size={18} />
+                      <Activity size={14} />
+                      View Vitals
                     </button>
                   </td>
                 </tr>
