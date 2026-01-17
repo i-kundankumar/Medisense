@@ -29,6 +29,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeNav, setActiveNav] = useState('dashboard');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [directMessageUser, setDirectMessageUser] = useState(null);
 
   // 1. FETCH REAL USER ROLE FROM FIREBASE
   useEffect(() => {
@@ -89,14 +90,19 @@ const Dashboard = () => {
     navigate('/login');
   };
 
+  const handleDirectMessage = (patient) => {
+    setDirectMessageUser(patient);
+    setActiveNav('message');
+  };
+
   // --- RENDER CONTENT: DOCTOR ---
   const renderDoctorContent = () => {
     switch (activeNav) {
       case 'dashboard':
         return <DoctorDashboardView currentUser={user} />;
-      case 'patients': return <PatientsView currentUser={user} />;
+      case 'patients': return <PatientsView currentUser={user} onMessageClick={handleDirectMessage} />;
       case 'appointments': return <AppointmentsView />;
-      case 'message': return <MessagesView currentUser={user} />;
+      case 'message': return <MessagesView currentUser={user} initialSelectedUser={directMessageUser} />;
       default: return <div>Select an option</div>;
     }
   };
@@ -118,8 +124,11 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="loading-content"><div className="spinner"></div><p>Loading...</p></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-500 text-lg font-medium">Loading...</p>
+        </div>
       </div>
     );
   }
@@ -156,7 +165,10 @@ const Dashboard = () => {
           {navItems.map(item => (
             <button
               key={item.id}
-              onClick={() => setActiveNav(item.id)}
+              onClick={() => {
+                setActiveNav(item.id);
+                setDirectMessageUser(null);
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${activeNav === item.id
                 ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-100'
                 : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'

@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Search, FileText, User, Activity, Wifi, Moon } from 'lucide-react';
+import { Search, FileText, User, Activity, Wifi, Moon, MessageSquare, Pill } from 'lucide-react';
 import { db } from "../firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import PatientMonitorModal from './PatientMonitorModal';
+import PrescribeModal from './PrescribeModal';
 
-const PatientsView = ({ currentUser }) => {
+const PatientsView = ({ currentUser, onMessageClick }) => {
   const [patients, setPatients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPatientId, setSelectedPatientId] = useState(null);
+  const [prescribingPatient, setPrescribingPatient] = useState(null);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -123,13 +125,29 @@ const PatientsView = ({ currentUser }) => {
                     </td>
                     <td className="py-4 px-6 text-sm text-slate-500">{p.createdAt ? new Date(p.createdAt.seconds * 1000).toLocaleDateString() : "N/A"}</td>
                     <td className="py-4 px-6">
-                      <button
-                        className="flex items-center gap-2 px-3 py-1.5 bg-white border border-blue-200 text-blue-600 rounded-lg text-xs font-medium hover:bg-blue-50 hover:border-blue-300 transition-all shadow-sm"
-                        onClick={() => setSelectedPatientId(p.id)}
-                      >
-                        <Activity size={14} />
-                        View Vitals
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          className="flex items-center gap-2 px-3 py-1.5 bg-white border border-blue-200 text-blue-600 rounded-lg text-xs font-medium hover:bg-blue-50 hover:border-blue-300 transition-all shadow-sm"
+                          onClick={() => setSelectedPatientId(p.id)}
+                        >
+                          <Activity size={14} />
+                          View Vitals
+                        </button>
+                        <button
+                          className="flex items-center gap-2 px-3 py-1.5 bg-white border border-emerald-200 text-emerald-600 rounded-lg text-xs font-medium hover:bg-emerald-50 hover:border-emerald-300 transition-all shadow-sm"
+                          onClick={() => setPrescribingPatient(p)}
+                        >
+                          <Pill size={14} />
+                          Prescribe
+                        </button>
+                        <button
+                          className="flex items-center justify-center px-3 py-1.5 bg-white border border-indigo-200 text-indigo-600 rounded-lg text-xs font-medium hover:bg-indigo-50 hover:border-indigo-300 transition-all shadow-sm"
+                          onClick={() => onMessageClick && onMessageClick(p)}
+                          title="Message"
+                        >
+                          <MessageSquare size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )))}
@@ -141,6 +159,15 @@ const PatientsView = ({ currentUser }) => {
       {/* LIVE PATIENT MONITOR MODAL */}
       {activePatient && (
         <PatientMonitorModal patient={activePatient} onClose={() => setSelectedPatientId(null)} />
+      )}
+
+      {/* PRESCRIPTION MODAL */}
+      {prescribingPatient && (
+        <PrescribeModal
+          patient={prescribingPatient}
+          currentUser={currentUser}
+          onClose={() => setPrescribingPatient(null)}
+        />
       )}
     </div>
   );
