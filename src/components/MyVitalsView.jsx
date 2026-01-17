@@ -295,7 +295,7 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
                                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isDeviceLinked ? 'bg-emerald-400' : 'bg-slate-400'}`}></span>
                                 <span className={`relative inline-flex rounded-full h-2 w-2 ${isDeviceLinked ? 'bg-emerald-500' : 'bg-slate-500'}`}></span>
                             </span>
-                            {isDeviceLinked ? 'Live Monitoring Active' : 'Simulation Mode'}
+                            {isDeviceLinked ? 'Live Monitoring Active' : 'Device Not Connected'}
                         </div>
                     </div>
                 </div>
@@ -316,7 +316,7 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
                             <span className="font-mono font-bold text-red-600 text-sm tabular-nums">{formatTime(elapsedTime)}</span>
                         ) : (
                             <span className="text-xs font-semibold text-slate-500 px-2 cursor-pointer select-none" onClick={toggleRecording}>
-                                {isSharingLive ? 'Start Live' : 'Start Rec'}
+                                Start Rec
                             </span>
                         )}
                     </div>

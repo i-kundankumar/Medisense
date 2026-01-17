@@ -44,7 +44,16 @@ const Dashboard = () => {
         // Use onSnapshot for real-time updates (e.g. when connecting to a doctor)
         unsubscribeUserDoc = onSnapshot(docRef, (docSnap) => {
           if (docSnap.exists()) {
-            setUser({ ...docSnap.data(), uid: currentUser.uid });
+            const newData = { ...docSnap.data(), uid: currentUser.uid };
+            setUser(prev => {
+              if (!prev) return newData;
+              // Optimization: Ignore updates if only currentVitals changed
+              // This prevents the whole dashboard from re-rendering 1/sec when device is streaming
+              const { currentVitals: pV, ...pRest } = prev;
+              const { currentVitals: nV, ...nRest } = newData;
+              if (JSON.stringify(pRest) === JSON.stringify(nRest)) return prev;
+              return newData;
+            });
           }
           setLoading(false);
         });
