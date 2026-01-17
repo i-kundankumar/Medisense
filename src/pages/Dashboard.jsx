@@ -12,7 +12,6 @@ import { auth, db } from "../firebase";
 import { signOut } from "firebase/auth";
 import { doc, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
 
-import './Dashboard.css'; // Make sure this CSS file exists
 import logo from "../assets/logo.png";
 
 // Sub-components
@@ -143,21 +142,25 @@ const Dashboard = () => {
   const navItems = user?.role === 'doctor' ? doctorNav : patientNav;
 
   return (
-    <div className="doctor-dashboard">
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
       {/* Sidebar (Common for both, but items change) */}
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <div className="logo-container">
-            <img src={logo} alt="MediSense Logo" style={{ width: '200px', height: 'auto', objectFit: 'contain' }} />
+      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col hidden md:flex z-20 shadow-sm">
+        <div className="h-20 flex items-center px-6 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            {/* Replace with your actual logo or keep the image */}
+            <img src={logo} alt="MediSense" className="h-12 w-auto object-contain" />
           </div>
         </div>
 
-        <nav className="sidebar-nav">
+        <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
           {navItems.map(item => (
             <button
               key={item.id}
               onClick={() => setActiveNav(item.id)}
-              className={`nav-item ${activeNav === item.id ? 'active' : ''}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${activeNav === item.id
+                ? 'bg-blue-100 text-blue-700 shadow-sm ring-1 ring-blue-100'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
             >
               <item.icon size={20} />
               <span>{item.label}</span>
@@ -165,44 +168,45 @@ const Dashboard = () => {
           ))}
         </nav>
 
-        <div className="sidebar-footer">
-          <div className="user-profile">
-            <div className="user-info">
-              <div className="user-avatar">
-                {user?.fullName?.split(' ').map(n => n[0]).join('') || 'U'}
-              </div>
-              <div className="user-details">
-                <p className="user-name">{user?.fullName || 'User'}</p>
-                <p className="user-role" style={{ textTransform: 'capitalize' }}>{user?.role || 'Member'}</p>
-              </div>
+        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+          <div className="flex items-center gap-3 mb-4 px-2">
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shadow-sm border border-blue-200">
+              {user?.fullName?.split(' ').map(n => n[0]).join('') || 'U'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-slate-900 truncate">{user?.fullName || 'User'}</p>
+              <p className="text-xs text-slate-500 capitalize truncate">{user?.role || 'Member'}</p>
             </div>
           </div>
-          <button onClick={handleLogout} className="logout-btn">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-colors shadow-sm"
+          >
             <LogOut size={18} /> Logout
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="main-content">
-        <div className="content-wrapper">
-          <div className="dashboard-header">
-            <div className="header-top-dash">
-              <div className="header-title-dash">
-                <h1>Hello, {user?.role === 'doctor' ? 'Dr. ' : ''}{user?.fullName?.split(' ')[0]}! 👋</h1>
-                <p>{user?.role === 'doctor' ? "Here's your daily overview" : "Here are your live health vitals"}</p>
+      <main className="flex-1 overflow-y-auto relative scroll-smooth">
+        <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-slate-200/60 shadow-sm">
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">Hello, {user?.role === 'doctor' ? 'Dr. ' : ''}{user?.fullName?.split(' ')[0]}!</h1>
+              <p className="text-sm text-slate-500">{user?.role === 'doctor' ? "Here's your daily overview" : "Here are your live health vitals"}</p>
+            </div>
+            <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl border border-slate-100 shadow-sm">
+              <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
+                <Clock size={18} />
               </div>
-              <div className="time-display">
-                <div className="time-icon"><Clock size={18} /></div>
-                <div>
-                  <p className="time-label">Current Time</p>
-                  <p className="time-value">{currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
-                </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Current Time</p>
+                <p className="text-base font-bold text-slate-900 tabular-nums leading-none">{currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
               </div>
             </div>
           </div>
 
-          <div className="dynamic-content">
+          <div className="min-h-[500px]">
             {user?.role === 'doctor' ? renderDoctorContent() : renderPatientContent()}
           </div>
         </div>

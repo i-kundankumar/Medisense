@@ -51,12 +51,12 @@ const HistoryView = ({ currentUser }) => {
     });
 
     return (
-        <div className="view-container">
+        <div className="flex flex-col gap-6">
             {/* Header Section */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-900">Health History</h2>
-                    <p className="text-sm text-slate-500">Archive of your recorded vitals and snapshots.</p>
+                    <h2 className="text-xl font-bold text-slate-800">Health History</h2>
+                    <p className="text-sm text-slate-500">Archive of your recorded vitals and snapshots</p>
                 </div>
                 <div className="flex gap-3">
                     <div className="relative">
@@ -75,11 +75,11 @@ const HistoryView = ({ currentUser }) => {
             </div>
 
             {/* Data Table */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-slate-50 border-b border-slate-200">
+                            <tr className="bg-slate-50/50 border-b border-slate-200">
                                 <th className="py-4 px-6 font-semibold text-slate-600 text-sm">Date & Time</th>
                                 <th className="py-4 px-6 font-semibold text-slate-600 text-sm">Record Type</th>
                                 <th className="py-4 px-6 font-semibold text-slate-600 text-sm">Heart Rate</th>
@@ -95,7 +95,7 @@ const HistoryView = ({ currentUser }) => {
                                 <tr><td colSpan="6" className="text-center py-12 text-slate-400">No records found for this period.</td></tr>
                             ) : (
                                 filteredData.map((record) => (
-                                    <tr key={record.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors last:border-0">
+                                    <tr key={record.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors last:border-0">
                                         <td className="py-4 px-6 text-sm text-slate-700">
                                             <div className="flex items-center gap-2">
                                                 <Calendar size={14} className="text-slate-400" />
@@ -104,8 +104,8 @@ const HistoryView = ({ currentUser }) => {
                                         </td>
                                         <td className="py-4 px-6 text-sm">
                                             <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${record.type === 'manual_snapshot'
-                                                    ? 'bg-purple-50 text-purple-700 border-purple-100'
-                                                    : 'bg-blue-50 text-blue-700 border-blue-100'
+                                                ? 'bg-purple-50 text-purple-700 border-purple-100'
+                                                : 'bg-blue-50 text-blue-700 border-blue-100'
                                                 }`}>
                                                 {record.type === 'manual_snapshot' ? 'Snapshot' : 'Auto-Log'}
                                             </span>

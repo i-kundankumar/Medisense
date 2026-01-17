@@ -283,83 +283,93 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
     return (
         <div className="flex flex-col gap-6">
             {/* Header & Compact Connection Status */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                <div>
-                    <h2 className="text-xl font-bold text-gray-800">My Vitals</h2>
-                    <p className="text-sm text-gray-500">Real-time health monitoring</p>
+            <div className="sticky top-0 z-20 flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-white/80 backdrop-blur-xl p-4 rounded-3xl shadow-sm border border-slate-200/60 transition-all">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-600 rounded-2xl shadow-lg shadow-blue-600/20 text-white">
+                        <Activity size={24} />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-900 tracking-tight">My Vitals</h2>
+                        <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+                            <span className="relative flex h-2 w-2">
+                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isDeviceLinked ? 'bg-emerald-400' : 'bg-slate-400'}`}></span>
+                                <span className={`relative inline-flex rounded-full h-2 w-2 ${isDeviceLinked ? 'bg-emerald-500' : 'bg-slate-500'}`}></span>
+                            </span>
+                            {isDeviceLinked ? 'Live Monitoring Active' : 'Simulation Mode'}
+                        </div>
+                    </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+                    {/* Recording Control */}
+                    <div className={`flex items-center gap-2 px-1 py-1 rounded-full border transition-all ${isRecording ? 'bg-red-50 border-red-200 pr-4' : 'bg-slate-50 border-slate-200'}`}>
+                        <button
+                            onClick={toggleRecording}
+                            className={`flex items-center justify-center w-8 h-8 rounded-full transition-all shadow-sm ${isRecording
+                                ? 'bg-white text-red-600 hover:scale-105'
+                                : 'bg-white text-slate-700 hover:text-blue-600 hover:scale-105'
+                                }`}
+                        >
+                            {isRecording ? <Square size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="ml-0.5" />}
+                        </button>
+                        {isRecording ? (
+                            <span className="font-mono font-bold text-red-600 text-sm tabular-nums">{formatTime(elapsedTime)}</span>
+                        ) : (
+                            <span className="text-xs font-semibold text-slate-500 px-2 cursor-pointer select-none" onClick={toggleRecording}>
+                                {isSharingLive ? 'Start Live' : 'Start Rec'}
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+
                     {/* Manual Save Snapshot */}
                     <button
                         onClick={handleSaveSnapshot}
-                        className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors bg-gray-50 px-4 py-2 rounded-full border border-gray-200 hover:border-blue-200"
-                        title="Save current vitals to history"
+                        className="flex items-center justify-center w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm"
+                        title="Save Snapshot"
                     >
-                        <Save size={16} />
-                        <span className="hidden sm:inline">Save Snapshot</span>
+                        <Save size={18} />
                     </button>
 
-                    {/* Connect Device Button */}
+                    {/* Device Connect Pill */}
                     <button
                         onClick={handleConnectClick}
-                        className={`flex items-center gap-2 text-sm font-medium transition-colors px-4 py-2 rounded-full border ${isDeviceLinked ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-slate-600 border-gray-200 hover:border-blue-200 hover:text-blue-600'}`}
+                        className={`group flex items-center gap-2 pl-3 pr-4 py-2 rounded-full border text-sm font-semibold transition-all shadow-sm ${isDeviceLinked
+                            ? 'bg-emerald-50/50 border-emerald-200 text-emerald-700 hover:bg-emerald-100/50'
+                            : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600'
+                            }`}
                     >
-                        <Link size={16} />
-                        <span className="hidden sm:inline">{isDeviceLinked ? 'Device Linked' : 'Connect Device'}</span>
+                        <div className={`flex items-center justify-center w-6 h-6 rounded-full ${isDeviceLinked ? 'bg-emerald-200/50 text-emerald-700' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600'}`}>
+                            <Link size={14} />
+                        </div>
+                        <span>{isDeviceLinked ? 'Device Linked' : 'Connect Device'}</span>
                     </button>
 
-                    {/* Recording Control */}
-                    <div className={`flex items-center gap-3 px-4 py-2 rounded-full border transition-all ${isRecording ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-200'}`}>
-                        {isRecording && (
-                            <div className="flex items-center gap-2 text-red-600 font-mono font-medium text-sm">
-                                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                                {formatTime(elapsedTime)}
-                            </div>
-                        )}
-                        <button
-                            onClick={toggleRecording}
-                            className={`flex items-center gap-2 text-sm font-bold px-2 py-0.5 rounded-full transition-colors ${isRecording
-                                ? 'text-red-600 hover:text-red-700'
-                                : 'text-slate-700 hover:text-slate-900'
-                                }`}
-                        >
-                            {isRecording ? (
-                                <><Square size={14} fill="currentColor" /> Stop {isSharingLive ? 'Upload' : 'Rec'}</>
-                            ) : (
-                                <><Play size={14} fill="currentColor" /> {isSharingLive ? 'Go Live' : 'Record'}</>
-                            )}
-                        </button>
-                    </div>
-
+                    {/* Doctor Status Pill */}
                     {currentUser?.assignedDoctorId ? (
-                        <div className="flex items-center gap-3 bg-blue-50 px-4 py-2 rounded-full border border-blue-100 self-start sm:self-auto">
-                            <div className="relative">
-                                <div className="w-2 h-2 bg-green-500 rounded-full absolute top-0 right-0 animate-pulse"></div>
-                                <Share2 size={16} className="text-blue-600" />
+                        <button
+                            onClick={() => setActiveNav('share')}
+                            className="flex items-center gap-2 pl-3 pr-4 py-2 rounded-full border border-blue-200 bg-blue-50/50 text-blue-700 text-sm font-semibold hover:bg-blue-100/50 transition-all shadow-sm"
+                        >
+                            <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-blue-200/50 text-blue-700">
+                                <Share2 size={14} />
+                                {currentUser.sharingPermissions?.live && (
+                                    <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500 border-2 border-white"></span>
+                                    </span>
+                                )}
                             </div>
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wide">Doctor Connected</span>
-                                <span className="text-[10px] text-blue-600 leading-none opacity-80">
-                                    Sharing: {currentUser.sharingPermissions?.live ? 'Live' : ''}
-                                    {currentUser.sharingPermissions?.live && currentUser.sharingPermissions?.history ? ' & ' : ''}
-                                    {currentUser.sharingPermissions?.history ? 'History' : ''}
-                                </span>
-                            </div>
-                            <button
-                                onClick={() => setActiveNav('share')}
-                                className="ml-1 p-1 hover:bg-blue-100 rounded-full transition-colors text-blue-500"
-                            >
-                                <Settings size={14} />
-                            </button>
-                        </div>
+                            <span>Doctor Active</span>
+                        </button>
                     ) : (
                         <button
                             onClick={() => setActiveNav('share')}
-                            className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors self-start sm:self-auto"
+                            className="flex items-center gap-2 pl-3 pr-4 py-2 rounded-full border border-dashed border-slate-300 text-slate-500 text-sm font-medium hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-all"
                         >
                             <Share2 size={16} />
-                            <span>Connect Doctor</span>
+                            <span>Link Doctor</span>
                         </button>
                     )}
                 </div>
@@ -614,26 +624,29 @@ const VitalCard = ({ title, value, unit, icon, status, color, chartData, dataKey
     const strokeColor = color === 'rose' ? '#e11d48' : color === 'sky' ? '#0284c7' : color === 'amber' ? '#d97706' : color === 'teal' ? '#0d9488' : '#9333ea';
 
     return (
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group relative overflow-hidden">
-            <div className="flex justify-between items-start mb-4">
-                <div className={`p-3 rounded-xl ${baseClass} group-hover:scale-110 transition-transform duration-300`}>
-                    {icon}
+        <div className="bg-white p-6 rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 group relative overflow-hidden border border-slate-100">
+            <div className="flex justify-between items-start z-10 relative">
+                <div>
+                    <p className="text-xs font-bold text-slate-400 mb-1 tracking-wider uppercase">{title}</p>
+                    <div className="flex items-baseline gap-1.5">
+                        <h3 className="text-3xl font-bold text-slate-800 tracking-tight">{value}</h3>
+                        <span className="text-sm font-medium text-slate-400">{unit}</span>
+                    </div>
                 </div>
-                <span className={`text-xs font-bold px-2 py-1 rounded-full ${['Normal', 'Ambient', 'Rhythm'].includes(status) ? 'bg-gray-100 text-gray-600' : 'bg-red-100 text-red-600'}`}>
+                <div className={`p-3 rounded-2xl ${baseClass} bg-opacity-20 transition-transform duration-300 group-hover:scale-110`}>
+                    {React.cloneElement(icon, { size: 22 })}
+                </div>
+            </div>
+
+            <div className="mt-4 flex items-center gap-2 z-10 relative">
+                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wide ${['Normal', 'Ambient', 'Rhythm'].includes(status) ? 'bg-slate-100 text-slate-500' : 'bg-red-50 text-red-600'}`}>
                     {status}
                 </span>
-            </div>
-            <div>
-                <p className="text-sm text-gray-500 font-medium mb-1">{title}</p>
-                <div className="flex items-baseline gap-1">
-                    <h3 className="text-2xl font-bold text-gray-900">{value}</h3>
-                    <span className="text-sm text-gray-400 font-medium">{unit}</span>
-                </div>
             </div>
 
             {/* Sparkline Chart */}
             {chartData && (
-                <div className="absolute bottom-0 left-0 right-0 h-16 opacity-20 pointer-events-none">
+                <div className="absolute bottom-0 left-0 right-0 h-24 opacity-10 group-hover:opacity-20 transition-opacity duration-500 pointer-events-none">
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={chartData}>
                             <defs>
