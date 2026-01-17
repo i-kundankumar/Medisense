@@ -52,7 +52,7 @@ const PatientsView = ({ currentUser, onMessageClick }) => {
       if (diff < 20000) return 'Live';
     }
     // 2. Check for ONLINE
-    if (p.isOnline) return 'Signed In';
+    if (p.isOnline) return 'Online';
 
     // 3. Default
     return 'Offline';
@@ -116,8 +116,8 @@ const PatientsView = ({ currentUser, onMessageClick }) => {
                         const status = getPatientStatus(p);
                         if (status === 'Live') {
                           return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100"><Activity size={12} className="animate-pulse" /> Live</span>;
-                        } else if (status === 'Signed In') {
-                          return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-100"><Wifi size={12} /> Signed In</span>;
+                        } else if (status === 'Online') {
+                          return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-100"><Wifi size={12} /> Online</span>;
                         } else {
                           return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200"><Moon size={12} /> Offline</span>;
                         }
