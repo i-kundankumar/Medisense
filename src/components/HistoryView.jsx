@@ -34,7 +34,7 @@ const HistoryView = ({ currentUser }) => {
         };
 
         fetchHistory();
-    }, [currentUser]);
+    }, [currentUser?.uid]);
 
     // Client-side date filtering
     const filteredData = historyData.filter(item => {

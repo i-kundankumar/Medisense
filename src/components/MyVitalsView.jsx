@@ -1,18 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Heart, Thermometer, Droplets, Share2, Activity, Wind, Zap, Settings, AlertCircle, Play, Square, Save } from 'lucide-react';
+import { Heart, Thermometer, Droplets, Share2, Activity, Wind, Zap, Settings, AlertCircle, Play, Square, Save, Link, X } from 'lucide-react';
 import { Area, AreaChart, ComposedChart, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { db } from "../firebase";
-import { collection, addDoc, serverTimestamp, doc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, onSnapshot } from "firebase/firestore";
 
 const MyVitalsView = ({ currentUser, setActiveNav }) => {
     // --- STATE FOR PATIENT VITALS (Simulation) ---
     const [vitals, setVitals] = useState({
-        heartRate: Math.floor(Math.random() * (100 - 60) + 60),
-        spo2: Math.floor(Math.random() * (100 - 94) + 94),
-        bodyTemp: (Math.random() * (37.5 - 36.0) + 36.0).toFixed(1),
-        roomTemp: (Math.random() * (26.0 - 22.0) + 22.0).toFixed(1),
-        ecg: 'Normal'
+        heartRate: 0,
+        spo2: 0,
+        bodyTemp: 0,
+        roomTemp: 0,
+        ecg: '--'
     });
+
+    // --- DEVICE CONNECTION STATE ---
+    const [isDeviceLinked, setIsDeviceLinked] = useState(false);
+    const [connectedMacAddress, setConnectedMacAddress] = useState("");
+    const [showConnectModal, setShowConnectModal] = useState(false);
+    const [macInput, setMacInput] = useState("");
+    const [isConnecting, setIsConnecting] = useState(false);
+    const [connectError, setConnectError] = useState("");
+
+    // Sync connection state with user profile
+    useEffect(() => {
+        if (currentUser?.connectedDeviceId) {
+            setIsDeviceLinked(true);
+            setConnectedMacAddress(currentUser.connectedDeviceId);
+        } else {
+            setIsDeviceLinked(false);
+            setConnectedMacAddress("");
+        }
+    }, [currentUser?.connectedDeviceId]);
 
     // --- RECORDING / UPLOAD STATE ---
     const [isRecording, setIsRecording] = useState(false);
@@ -40,27 +59,10 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
     const lastLiveUpdate = useRef(0);
 
     // Initialize with dummy data so the chart isn't empty on load
-    const [history, setHistory] = useState(() => {
-        const data = [];
-        const now = new Date();
-        for (let i = 20; i >= 0; i--) {
-            const t = new Date(now.getTime() - i * 1000);
-            data.push({
-                time: t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-                hr: Math.floor(Math.random() * (100 - 60) + 60),
-                spo2: Math.floor(Math.random() * (100 - 94) + 94),
-                bodyTemp: parseFloat((Math.random() * (37.5 - 36.0) + 36.0).toFixed(1)),
-                roomTemp: parseFloat((Math.random() * (26.0 - 22.0) + 22.0).toFixed(1))
-            });
-        }
-        return data;
-    });
+    const [history, setHistory] = useState([]);
 
     // --- ECG DUMMY DATA STATE ---
-    const [ecgData, setEcgData] = useState(() => {
-        // Generate initial 100 points of flat-ish line
-        return Array.from({ length: 60 }, (_, i) => ({ time: i, value: 50 }));
-    });
+    const [ecgData, setEcgData] = useState([]);
 
     // --- MANUAL SNAPSHOT ---
     const handleSaveSnapshot = async () => {
@@ -78,39 +80,151 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
         }
     };
 
-    // 1. SIMULATION ENGINE (Generates Data)
-    useEffect(() => {
-        const timer = setInterval(() => {
-            // Simulate Vitals
-            const newHR = Math.floor(Math.random() * (100 - 60) + 60);
-            const newSpO2 = Math.floor(Math.random() * (100 - 94) + 94);
-            const newBodyTemp = parseFloat((Math.random() * (37.5 - 36.0) + 36.0).toFixed(1));
-            const newRoomTemp = parseFloat((Math.random() * (26.0 - 22.0) + 22.0).toFixed(1));
+    // --- CONNECT DEVICE HANDLERS ---
+    const handleConnectClick = () => {
+        setConnectError("");
+        setMacInput(connectedMacAddress || "");
+        setShowConnectModal(true);
+    };
 
-            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const confirmConnection = async () => {
+        if (!macInput.trim()) {
+            setConnectError("Please enter a MAC address");
+            return;
+        }
 
+        setIsConnecting(true);
+        setConnectError("");
+
+        try {
+            const mac = macInput.trim();
+            const registryRef = doc(db, "registry", mac);
+            const docSnap = await getDoc(registryRef);
+
+            if (docSnap.exists()) {
+                const deviceData = docSnap.data();
+
+                // Check if device is already assigned to another user
+                if (deviceData.ownerId && deviceData.ownerId !== currentUser.uid) {
+                    setConnectError("Device is already assigned to another user.");
+                    return;
+                }
+
+                // 1. Handshake: Write User ID to Registry (if not already assigned)
+                if (deviceData.ownerId !== currentUser.uid) {
+                    await updateDoc(registryRef, {
+                        ownerId: currentUser.uid,
+                        status: 'assigned',
+                        assignedAt: serverTimestamp()
+                    });
+                }
+
+                // 2. Save Device to User Profile (Persistence)
+                await updateDoc(doc(db, "users", currentUser.uid), {
+                    connectedDeviceId: mac
+                });
+
+                setIsDeviceLinked(true);
+                setConnectedMacAddress(mac);
+                setShowConnectModal(false);
+            } else {
+                setConnectError("Device not found in registry.");
+            }
+        } catch (error) {
+            console.error("Connection failed:", error);
+            setConnectError("Failed to connect. Check console.");
+        } finally {
+            setIsConnecting(false);
+        }
+    };
+
+    // --- DISCONNECT DEVICE HANDLER ---
+    const handleDisconnect = async () => {
+        if (!connectedMacAddress) return;
+
+        setIsConnecting(true);
+        try {
+            // 1. Remove User from Registry
+            const registryRef = doc(db, "registry", connectedMacAddress);
+            // We attempt to update the registry. Even if the device is offline, this DB write should succeed.
+            await updateDoc(registryRef, {
+                ownerId: null,
+                status: 'ready',
+                assignedAt: null
+            });
+
+            // 2. Remove Device from User Profile
+            await updateDoc(doc(db, "users", currentUser.uid), {
+                connectedDeviceId: null
+            });
+
+            // 3. Reset Local State
+            setIsDeviceLinked(false);
+            setConnectedMacAddress("");
+            setShowConnectModal(false);
             setVitals({
-                heartRate: newHR,
-                spo2: newSpO2,
-                bodyTemp: newBodyTemp,
-                roomTemp: newRoomTemp,
-                ecg: 'Normal'
+                heartRate: 0,
+                spo2: 0,
+                bodyTemp: 0,
+                roomTemp: 0,
+                ecg: '--'
             });
+            alert("Device disconnected successfully.");
+        } catch (error) {
+            console.error("Disconnect failed:", error);
+            setConnectError("Failed to disconnect. Check console.");
+        } finally {
+            setIsConnecting(false);
+        }
+    };
 
-            setHistory(prev => {
-                const newHistory = [...prev, {
-                    time: timeStr,
-                    hr: newHR,
-                    spo2: newSpO2,
-                    bodyTemp: newBodyTemp,
-                    roomTemp: newRoomTemp
-                }];
-                return newHistory.slice(-20); // Keep last 20 points
+    // 1. DATA SOURCE ENGINE (Simulation vs Device Stream)
+    useEffect(() => {
+        let unsubscribe;
+
+        if (isDeviceLinked && currentUser?.uid) {
+            // --- DEVICE MODE: Listen to Firestore ---
+            const userRef = doc(db, "users", currentUser.uid);
+            unsubscribe = onSnapshot(userRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data?.currentVitals) {
+                        const remoteVitals = data.currentVitals;
+
+                        // Update Vitals State
+                        setVitals(prev => ({
+                            ...prev,
+                            ...remoteVitals,
+                            // Ensure ECG is kept if not provided by device, or update if it is
+                            ecg: remoteVitals.ecg || prev.ecg
+                        }));
+
+                        // Update History for Chart
+                        const timestamp = remoteVitals.lastUpdated?.toDate
+                            ? remoteVitals.lastUpdated.toDate()
+                            : new Date();
+
+                        const timeStr = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                        setHistory(prev => {
+                            const newHistory = [...prev, {
+                                time: timeStr,
+                                hr: remoteVitals.heartRate || 0,
+                                spo2: remoteVitals.spo2 || 0,
+                                bodyTemp: remoteVitals.bodyTemp || 0,
+                                roomTemp: remoteVitals.roomTemp || 0
+                            }];
+                            return newHistory.slice(-20);
+                        });
+                    }
+                }
             });
-        }, 1000);
+        }
 
-        return () => clearInterval(timer);
-    }, []);
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
+    }, [isDeviceLinked, currentUser?.uid]);
 
     // 2. UPLOAD ENGINE (Handles Firestore Writes)
     useEffect(() => {
@@ -119,8 +233,21 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
         const handleUpload = async () => {
             const now = Date.now();
 
-            // A. Update Live Node (Real-time, every 5 seconds) - ONLY IF SHARING
-            if (isSharingLive && now - lastLiveUpdate.current >= 2000) {
+            // A. RECORDING: Save to History Collection
+            try {
+                await addDoc(collection(db, "users", currentUser.uid, "vitalsHistory"), {
+                    ...vitals,
+                    timestamp: serverTimestamp(),
+                    readableTime: new Date().toLocaleString(),
+                    type: 'auto_log'
+                });
+            } catch (error) {
+                console.error("Error recording history:", error);
+            }
+
+            // B. LIVE SHARING: Update Current Vitals Node (Only if NO device is linked)
+            // If device is linked, IT updates the live node directly. We shouldn't overwrite it.
+            if (!isDeviceLinked && isSharingLive && now - lastLiveUpdate.current >= 2000) {
                 try {
                     const userRef = doc(db, "users", currentUser.uid);
                     await updateDoc(userRef, {
@@ -137,7 +264,7 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
         };
 
         handleUpload();
-    }, [vitals, isRecording, currentUser, isSharingLive]); // Runs whenever 'vitals' updates (1s)
+    }, [vitals, isRecording, currentUser?.uid, isSharingLive, isDeviceLinked]); // Runs whenever 'vitals' updates (1s)
 
     // 3. TIMER ENGINE (UI Only)
     useEffect(() => {
@@ -152,36 +279,6 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
         return () => clearInterval(interval);
     }, [isRecording]);
 
-    // --- ECG WAVEFORM ANIMATION LOOP ---
-    useEffect(() => {
-        let tick = 0;
-        const ecgTimer = setInterval(() => {
-            setEcgData(prev => {
-                // Simulate P-QRS-T Wave
-                let val = 50;
-                const step = tick % 40; // Cycle length
-
-                // P Wave
-                if (step >= 5 && step < 10) val += 5;
-                // QRS Complex
-                else if (step === 12) val -= 10; // Q
-                else if (step === 13) val += 80; // R
-                else if (step === 14) val -= 20; // S
-                // T Wave
-                else if (step >= 20 && step < 28) val += 8;
-
-                // Add noise
-                val += Math.random() * 4 - 2;
-
-                const newPoint = { time: tick, value: val };
-                const newData = [...prev.slice(1), newPoint];
-                return newData;
-            });
-            tick++;
-        }, 50); // Update every 50ms for smooth animation
-
-        return () => clearInterval(ecgTimer);
-    }, []);
 
     return (
         <div className="flex flex-col gap-6">
@@ -201,6 +298,15 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
                     >
                         <Save size={16} />
                         <span className="hidden sm:inline">Save Snapshot</span>
+                    </button>
+
+                    {/* Connect Device Button */}
+                    <button
+                        onClick={handleConnectClick}
+                        className={`flex items-center gap-2 text-sm font-medium transition-colors px-4 py-2 rounded-full border ${isDeviceLinked ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-slate-600 border-gray-200 hover:border-blue-200 hover:text-blue-600'}`}
+                    >
+                        <Link size={16} />
+                        <span className="hidden sm:inline">{isDeviceLinked ? 'Device Linked' : 'Connect Device'}</span>
                     </button>
 
                     {/* Recording Control */}
@@ -407,6 +513,90 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Device Connection Modal */}
+            {showConnectModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <h3 className="text-lg font-bold text-gray-900">{isDeviceLinked ? 'Device Settings' : 'Connect Device'}</h3>
+                            <button onClick={() => setShowConnectModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="p-6">
+                            {isDeviceLinked ? (
+                                <div className="space-y-6">
+                                    <div className="bg-green-50 border border-green-100 rounded-xl p-4 flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+                                            <Link size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-semibold text-green-800 uppercase tracking-wider">Connected Device</p>
+                                            <p className="text-lg font-mono font-bold text-green-900">{connectedMacAddress}</p>
+                                        </div>
+                                    </div>
+
+                                    <p className="text-sm text-gray-500">
+                                        Your device is currently linked and streaming vitals. Disconnecting will stop data synchronization.
+                                    </p>
+
+                                    <button
+                                        onClick={handleDisconnect}
+                                        disabled={isConnecting}
+                                        className="w-full px-4 py-3 bg-red-50 text-red-600 border border-red-100 rounded-xl font-medium hover:bg-red-100 transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
+                                    >
+                                        {isConnecting ? 'Disconnecting...' : 'Disconnect Device'}
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <p className="text-sm text-gray-500 mb-4">
+                                        Enter the unique MAC address found on your device label (e.g., B4E62D).
+                                    </p>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">MAC Address</label>
+                                            <input
+                                                type="text"
+                                                value={macInput}
+                                                onChange={(e) => setMacInput(e.target.value.toUpperCase())}
+                                                placeholder="B4E62D..."
+                                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                                            />
+                                        </div>
+
+                                        {connectError && (
+                                            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
+                                                <AlertCircle size={16} />
+                                                {connectError}
+                                            </div>
+                                        )}
+
+                                        <div className="flex gap-3 pt-2">
+                                            <button
+                                                onClick={() => setShowConnectModal(false)}
+                                                className="flex-1 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={confirmConnection}
+                                                disabled={isConnecting}
+                                                className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
+                                            >
+                                                {isConnecting ? 'Connecting...' : <><Link size={18} /> Connect</>}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
