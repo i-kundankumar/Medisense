@@ -110,7 +110,7 @@ const Dashboard = () => {
       case 'dashboard':
         return <DoctorDashboardView currentUser={user} />;
       case 'patients': return <PatientsView currentUser={user} onMessageClick={handleDirectMessage} />;
-      case 'appointments': return <AppointmentsView />;
+      case 'appointments': return <AppointmentsView currentUser={user} />;
       case 'message': return <MessagesView currentUser={user} initialSelectedUser={directMessageUser} />;
       default: return <div>Select an option</div>;
     }
@@ -125,6 +125,8 @@ const Dashboard = () => {
         return <ShareDataView currentUser={user} />;
       case 'history':
         return <HistoryView currentUser={user} />;
+      case 'appointments':
+        return <AppointmentsView currentUser={user} />;
       case 'dashboard':
       default:
         return <MyVitalsView currentUser={user} setActiveNav={setActiveNav} />;
@@ -153,6 +155,7 @@ const Dashboard = () => {
   const patientNav = [
     { id: 'dashboard', label: 'My Vitals', icon: Activity },
     { id: 'history', label: 'History', icon: Calendar }, // Placeholder
+    { id: 'appointments', label: 'Appointments', icon: Calendar },
     { id: 'message', label: 'Consult Doctor', icon: MessageSquare },
     { id: 'share', label: 'Share Data', icon: Share2 },
   ];
