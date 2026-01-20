@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Download, Activity, Thermometer, Droplets, Wind } from 'lucide-react';
+import { Calendar, Download, Activity, Thermometer, Droplets, Wind, Cloud } from 'lucide-react';
 import { db } from "../firebase";
 import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 
@@ -86,6 +86,7 @@ const HistoryView = ({ currentUser }) => {
                                 <th className="py-4 px-6 font-semibold text-slate-600 text-sm">SpO2</th>
                                 <th className="py-4 px-6 font-semibold text-slate-600 text-sm">Body Temp</th>
                                 <th className="py-4 px-6 font-semibold text-slate-600 text-sm">Room Temp</th>
+                                <th className="py-4 px-6 font-semibold text-slate-600 text-sm">Humidity</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -132,6 +133,12 @@ const HistoryView = ({ currentUser }) => {
                                             <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
                                                 <Wind size={14} className="text-teal-500" />
                                                 {record.roomTemp}<span className="text-slate-400 font-normal text-xs">°C</span>
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-6">
+                                            <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                                                <Cloud size={14} className="text-blue-500" />
+                                                {record.humidity || 0}<span className="text-slate-400 font-normal text-xs">%</span>
                                             </div>
                                         </td>
                                     </tr>

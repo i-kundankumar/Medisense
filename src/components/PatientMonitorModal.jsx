@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, X, Activity, Heart, Droplets, Thermometer, Wind, ArrowLeft, History, FileText, Lock } from 'lucide-react';
+import { User, X, Activity, Heart, Droplets, Thermometer, Wind, ArrowLeft, History, FileText, Lock, Cloud } from 'lucide-react';
 import HistoryView from './HistoryView';
 
 const PatientMonitorModal = ({ patient, onClose }) => {
@@ -105,6 +105,11 @@ const PatientMonitorModal = ({ patient, onClose }) => {
                                             <div className="flex justify-between items-start mb-2"><div className="p-2 bg-teal-50 rounded-lg text-teal-500"><Wind size={20} /></div></div>
                                             <p className="text-sm text-gray-500">Room Temp</p>
                                             <h3 className="text-2xl font-bold text-gray-900">{patient.currentVitals.roomTemp} <span className="text-sm text-gray-400 font-normal">°C</span></h3>
+                                        </div>
+                                        <div className="bg-white p-5 rounded-2xl border border-blue-100 shadow-sm">
+                                            <div className="flex justify-between items-start mb-2"><div className="p-2 bg-blue-50 rounded-lg text-blue-500"><Cloud size={20} /></div></div>
+                                            <p className="text-sm text-gray-500">Humidity</p>
+                                            <h3 className="text-2xl font-bold text-gray-900">{patient.currentVitals.humidity || 0} <span className="text-sm text-gray-400 font-normal">%</span></h3>
                                         </div>
                                     </div>
                                 </div>

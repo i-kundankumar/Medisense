@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Heart, Thermometer, Droplets, Share2, Activity, Wind, Zap, Settings, AlertCircle, Play, Square, Save, Link, X } from 'lucide-react';
+import { Heart, Thermometer, Droplets, Share2, Activity, Wind, Zap, Settings, AlertCircle, Play, Square, Save, Link, X, Cloud } from 'lucide-react';
 import { Area, AreaChart, ComposedChart, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { db } from "../firebase";
 import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, onSnapshot } from "firebase/firestore";
@@ -11,7 +11,9 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
         spo2: 0,
         bodyTemp: 0,
         roomTemp: 0,
-        ecg: '--'
+        humidity: 0,
+        ecg: 0,
+        ecgPeak: false
     });
 
     // --- DEVICE CONNECTION STATE ---
@@ -62,7 +64,12 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
     const [history, setHistory] = useState([]);
 
     // --- ECG DUMMY DATA STATE ---
-    const [ecgData, setEcgData] = useState([]);
+    const [ecgData, setEcgData] = useState(Array.from({ length: 100 }, () => ({ value: 2000 })));
+
+    // --- ECG CALIBRATION STATE ---
+    const [ecgCalibration, setEcgCalibration] = useState({ zoom: 1, offset: 0 });
+    const [showCalibration, setShowCalibration] = useState(false);
+
 
     // --- MANUAL SNAPSHOT ---
     const handleSaveSnapshot = async () => {
@@ -196,7 +203,9 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
                             ...prev,
                             ...remoteVitals,
                             // Ensure ECG is kept if not provided by device, or update if it is
-                            ecg: remoteVitals.ecg || prev.ecg
+                            ecg: remoteVitals.ecg || prev.ecg,
+                            ecg: remoteVitals.ecg !== undefined ? Number(remoteVitals.ecg) : 0,
+                            ecgPeak: remoteVitals.ecgPeak !== undefined ? Boolean(remoteVitals.ecgPeak) : false
                         }));
 
                         // Update History for Chart
@@ -212,10 +221,25 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
                                 hr: remoteVitals.heartRate || 0,
                                 spo2: remoteVitals.spo2 || 0,
                                 bodyTemp: remoteVitals.bodyTemp || 0,
-                                roomTemp: remoteVitals.roomTemp || 0
+                                roomTemp: remoteVitals.roomTemp || 0,
+                                humidity: remoteVitals.humidity || 0
                             }];
                             return newHistory.slice(-20);
                         });
+
+                        // Update ECG Chart Data
+                        if (remoteVitals.ecg !== undefined) {
+                            const raw = Number(remoteVitals.ecg);
+
+                            // 1️⃣ Center + scale ECG
+                            const ECG_SCALE = 4;        // adjust 3–6 if needed
+                            const ecgScaled = raw * ECG_SCALE;
+
+                            setEcgData(prev => {
+                                const next = [...prev, { value: ecgScaled }];
+                                return next.slice(-100); // smooth scrolling
+                            });
+                        }
                     }
                 }
             });
@@ -225,6 +249,33 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
             if (unsubscribe) unsubscribe();
         };
     }, [isDeviceLinked, currentUser?.uid]);
+
+    // 1.5 SIMULATION ENGINE (When no device is linked)
+    useEffect(() => {
+        if (isDeviceLinked) return;
+
+        let tick = 0;
+        const interval = setInterval(() => {
+            tick += 1;
+            setEcgData(prev => {
+                // Simulate a basic ECG pattern
+                // Baseline: 2000, P: +100, Q: -100, R: +800, S: -200, T: +150
+                let val = 2000 + Math.random() * 50; // Baseline + noise
+                const phase = tick % 20; // 20 ticks per beat (at 50ms interval = 1 beat/sec)
+
+                if (phase === 2) val += 100; // P
+                else if (phase === 4) val -= 100; // Q
+                else if (phase === 5) val += 800; // R
+                else if (phase === 6) val -= 200; // S
+                else if (phase === 10) val += 150; // T
+
+                const newData = [...prev, { value: val }];
+                return newData.slice(-100);
+            });
+        }, 50);
+
+        return () => clearInterval(interval);
+    }, [isDeviceLinked]);
 
     // 2. UPLOAD ENGINE (Handles Firestore Writes)
     useEffect(() => {
@@ -425,17 +476,18 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
                     dataKey="roomTemp"
                 />
 
-                {/* ECG */}
+                {/* Humidity */}
                 <VitalCard
-                    title="ECG"
-                    value={vitals.ecg}
-                    unit=""
-                    icon={<Activity className="text-purple-500" size={24} />}
-                    status="Rhythm"
-                    color="purple"
-                    chartData={ecgData}
-                    dataKey="value"
+                    title="Humidity"
+                    value={vitals.humidity}
+                    unit="%"
+                    icon={<Cloud className="text-blue-500" size={24} />}
+                    status="Ambient"
+                    color="blue"
+                    chartData={history}
+                    dataKey="humidity"
                 />
+
             </div>
 
             {/* Charts Section */}
@@ -479,8 +531,22 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
                 {/* ECG Visualizer (Simulated) */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-gray-800">ECG Monitor</h3>
-                        <Zap size={16} className="text-emerald-500" />
+                        <div className="flex items-center gap-3">
+                            <h3 className="font-bold text-gray-800">ECG Monitor</h3>
+                            <span className={`text-xs font-bold px-2 py-1 rounded-lg border uppercase tracking-wide ${vitals.ecgPeak ? 'bg-red-50 text-red-600 border-red-100' : 'bg-purple-50 text-purple-600 border-purple-100'}`}>
+                                {vitals.ecgPeak ? 'Peak Detected' : 'Rhythm: Normal'}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => setShowCalibration(!showCalibration)}
+                                className={`p-1.5 rounded-lg transition-colors ${showCalibration ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
+                                title="Calibrate Signal"
+                            >
+                                <Settings size={18} />
+                            </button>
+                            <Zap size={16} className="text-emerald-500" />
+                        </div>
                     </div>
 
                     <div className="flex-1 bg-gray-900 rounded-xl relative overflow-hidden flex items-center justify-center min-h-[200px]">
@@ -492,10 +558,18 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
                             <div className="w-full h-[120px]">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={ecgData}>
+                                        <XAxis hide />
+                                        <YAxis
+                                            domain={[
+                                                (2000 + ecgCalibration.offset) - (1000 / ecgCalibration.zoom),
+                                                (2000 + ecgCalibration.offset) + (1000 / ecgCalibration.zoom)
+                                            ]}
+                                            hide
+                                        />
                                         <Line
-                                            type="linear"
+                                            type="monotone"
                                             dataKey="value"
-                                            stroke="#10b981"
+                                            stroke={vitals.ecgPeak ? "#ff2d2d" : "#10ff8a"}
                                             strokeWidth={2}
                                             dot={false}
                                             isAnimationActive={false}
@@ -521,6 +595,41 @@ const MyVitalsView = ({ currentUser, setActiveNav }) => {
                             <p className="font-semibold text-gray-800">0.09s</p>
                         </div>
                     </div>
+
+                    {showCalibration && (
+                        <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100 animate-in slide-in-from-top-2 fade-in duration-200">
+                            <div className="flex justify-between items-center mb-3">
+                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Signal Calibration</h4>
+                                <button onClick={() => setEcgCalibration({ zoom: 1, offset: 0 })} className="text-[10px] font-medium text-blue-600 hover:underline">Reset</button>
+                            </div>
+                            <div className="space-y-4">
+                                <div>
+                                    <div className="flex justify-between text-xs mb-1.5">
+                                        <span className="text-slate-600 font-medium">Amplitude (Zoom)</span>
+                                        <span className="text-slate-900 font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200">{ecgCalibration.zoom.toFixed(1)}x</span>
+                                    </div>
+                                    <input
+                                        type="range" min="0.5" max="5" step="0.1"
+                                        value={ecgCalibration.zoom}
+                                        onChange={(e) => setEcgCalibration(prev => ({ ...prev, zoom: parseFloat(e.target.value) }))}
+                                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                    />
+                                </div>
+                                <div>
+                                    <div className="flex justify-between text-xs mb-1.5">
+                                        <span className="text-slate-600 font-medium">Baseline (Offset)</span>
+                                        <span className="text-slate-900 font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200">{ecgCalibration.offset > 0 ? '+' : ''}{ecgCalibration.offset}</span>
+                                    </div>
+                                    <input
+                                        type="range" min="-2000" max="2000" step="50"
+                                        value={ecgCalibration.offset}
+                                        onChange={(e) => setEcgCalibration(prev => ({ ...prev, offset: parseInt(e.target.value) }))}
+                                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -618,10 +727,11 @@ const VitalCard = ({ title, value, unit, icon, status, color, chartData, dataKey
         amber: 'bg-amber-50 text-amber-600 border-amber-100',
         teal: 'bg-teal-50 text-teal-600 border-teal-100',
         purple: 'bg-purple-50 text-purple-600 border-purple-100',
+        blue: 'bg-blue-50 text-blue-600 border-blue-100',
     };
 
     const baseClass = colorClasses[color] || colorClasses.sky;
-    const strokeColor = color === 'rose' ? '#e11d48' : color === 'sky' ? '#0284c7' : color === 'amber' ? '#d97706' : color === 'teal' ? '#0d9488' : '#9333ea';
+    const strokeColor = color === 'rose' ? '#e11d48' : color === 'sky' ? '#0284c7' : color === 'amber' ? '#d97706' : color === 'teal' ? '#0d9488' : color === 'blue' ? '#2563eb' : '#9333ea';
 
     return (
         <div className="bg-white p-6 rounded-3xl shadow-[0_2px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 group relative overflow-hidden border border-slate-100">

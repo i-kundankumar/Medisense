@@ -6,10 +6,11 @@ import { collection, query, where, onSnapshot } from "firebase/firestore";
 const DoctorDashboardView = ({ currentUser }) => {
     const [stats, setStats] = useState({
         totalPatients: 0,
-        appointmentsToday: 12, // Placeholder
-        pendingRequests: 3     // Placeholder
+        appointmentsToday: 0,
+        pendingRequests: 0
     });
     const [recentPatients, setRecentPatients] = useState([]);
+    const [appointments, setAppointments] = useState([]);
 
     useEffect(() => {
         if (!currentUser?.uid) return;
@@ -40,6 +41,43 @@ const DoctorDashboardView = ({ currentUser }) => {
         return () => unsubscribe();
     }, [currentUser]);
 
+    useEffect(() => {
+        if (!currentUser?.uid) return;
+
+        const q = query(
+            collection(db, "appointments"),
+            where("doctorId", "==", currentUser.uid)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const apts = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            // Fix: Use local date instead of UTC to match input type="date" values
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const todayStr = `${year}-${month}-${day}`;
+
+            const todays = apts.filter(a => a.rawDate === todayStr);
+            todays.sort((a, b) => (a.rawTime || '').localeCompare(b.rawTime || ''));
+
+            const pendingCount = apts.filter(a => a.status === 'Pending').length;
+
+            setAppointments(todays);
+            setStats(prev => ({
+                ...prev,
+                appointmentsToday: todays.length,
+                pendingRequests: pendingCount
+            }));
+        });
+
+        return () => unsubscribe();
+    }, [currentUser]);
+
     const getPatientStatus = (p) => {
         if (p.currentVitals?.lastUpdated) {
             const lastUpdate = p.currentVitals.lastUpdated.toDate ? p.currentVitals.lastUpdated.toDate().getTime() : Date.now();
@@ -48,6 +86,15 @@ const DoctorDashboardView = ({ currentUser }) => {
         }
         if (p.isOnline) return 'Signed In';
         return 'Offline';
+    };
+
+    const formatTime = (timeStr) => {
+        if (!timeStr) return { time: '--:--', period: '' };
+        const [hours, minutes] = timeStr.split(':');
+        const h = parseInt(hours, 10);
+        const period = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        return { time: `${h12}:${minutes}`, period };
     };
 
     return (
@@ -141,31 +188,37 @@ const DoctorDashboardView = ({ currentUser }) => {
                         <button className="text-sm text-blue-600 font-medium hover:underline">View Calendar</button>
                     </div>
                     <div className="space-y-3">
-                        {[
-                            { name: "Rahul Kumar", time: "10:00 AM", type: "General Checkup", status: "Upcoming" },
-                            { name: "Sneha Gupta", time: "11:30 AM", type: "Follow-up", status: "In Progress" },
-                            { name: "Amit Verma", time: "02:00 PM", type: "Lab Results", status: "Pending" },
-                            { name: "Priya Singh", time: "04:15 PM", type: "Consultation", status: "Pending" }
-                        ].map((apt, idx) => (
-                            <div key={idx} className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
-                                <div className="flex flex-col items-center justify-center min-w-[60px] bg-blue-50 rounded-lg py-2 px-1">
-                                    <span className="text-xs font-bold text-blue-700">{apt.time.split(' ')[0]}</span>
-                                    <span className="text-[10px] text-blue-500 font-medium">{apt.time.split(' ')[1]}</span>
-                                </div>
-                                <div className="flex-1">
-                                    <h4 className="font-semibold text-slate-900 text-sm">{apt.name}</h4>
-                                    <p className="text-xs text-slate-500">{apt.type}</p>
-                                </div>
-                                <div>
-                                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${apt.status === 'In Progress' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
-                                        apt.status === 'Upcoming' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
-                                            'bg-slate-100 text-slate-500'
-                                        }`}>
-                                        {apt.status}
-                                    </span>
-                                </div>
+                        {appointments.length === 0 ? (
+                            <div className="text-center py-8 text-slate-400">
+                                <Calendar size={32} className="mx-auto mb-2 opacity-20" />
+                                <p>No appointments today.</p>
                             </div>
-                        ))}
+                        ) : (
+                            appointments.map((apt) => {
+                                const { time, period } = formatTime(apt.rawTime || "00:00");
+                                return (
+                                    <div key={apt.id} className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                                        <div className="flex flex-col items-center justify-center min-w-[60px] bg-blue-50 rounded-lg py-2 px-1">
+                                            <span className="text-xs font-bold text-blue-700">{time}</span>
+                                            <span className="text-[10px] text-blue-500 font-medium">{period}</span>
+                                        </div>
+                                        <div className="flex-1">
+                                            <h4 className="font-semibold text-slate-900 text-sm">{apt.patientName}</h4>
+                                            <p className="text-xs text-slate-500">{apt.type}</p>
+                                        </div>
+                                        <div>
+                                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${apt.status === 'In Progress' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                                                apt.status === 'Confirmed' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                                                    apt.status === 'Pending' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
+                                                        'bg-slate-100 text-slate-500'
+                                                }`}>
+                                                {apt.status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
                     </div>
                 </div>
             </div>
