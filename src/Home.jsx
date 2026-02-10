@@ -11,7 +11,7 @@ function Home() {
     {
       icon: <Cloud className="w-6 h-6" />,
       title: "Cloud Connectivity",
-      description: "Real-time data upload via Firebase, MQTT, or ThingSpeak"
+      description: "Real-time data upload via Firebase"
     },
     {
       icon: <Smartphone className="w-6 h-6" />,
@@ -26,7 +26,7 @@ function Home() {
     {
       icon: <Shield className="w-6 h-6" />,
       title: "Secure Storage",
-      description: "HIPAA-compliant encryption with role-based access"
+      description: "HIPAA-non compliant but with role-based access"
     },
     {
       icon: <TrendingUp className="w-6 h-6" />,
